@@ -1,26 +1,13 @@
-#include <iostream>
-#include <Windows.h>
+
+#include <windows.h>
 #include <psapi.h>
 
+#include <iostream>
 #include <filesystem>
 #include <string>
 #include <vector>
 
 #include "MinHook.h"
-
-#ifdef DEBUG
-    #if defined _M_X64
-        #pragma comment(lib, "minhook.x64d.lib")
-    #elif defined _M_IX86
-        #pragma comment(lib, "minhook.x86d.lib")
-    #endif
-#else
-    #if defined _M_X64
-        #pragma comment(lib, "minhook.x64.lib")
-    #elif defined _M_IX86
-        #pragma comment(lib, "minhook.x86.lib")
-    #endif
-#endif
 
 bool compare(const uint8_t* pData, const uint8_t* bMask, const char* szMask) {
     for (; *szMask; ++szMask, ++pData, ++bMask) {
