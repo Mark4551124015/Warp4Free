@@ -85,7 +85,7 @@ __int64 __fastcall h_ui_update(__int64 a1, int a2, int a3, float a4, int a5, __i
         std::wcout << "Arg 7 Address: " << std::hex << a7 << std::dec << '\n';
     }
 
-    auto permissions = *(__int64*)(a7 + 160);
+    __int64 permissions = *(__int64*)(a7 + 160);
     *(__int64*)(permissions) = 0xFFFFFFFFFFFFFFFF;
 
     return h_ui_update_tramp(a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11);
@@ -101,16 +101,16 @@ void start() {
 
     std::wcout << "Warp4Free Attached\n";
 
-    // UI Update E8 ? ? ? ? 0F B6 4F 2C
-    // Settings Menu Update 40 55 53 56 57 41 55
-
     MODULEINFO parsecdll{};
     if (!find_module(&parsecdll, L"parsecd-")) {
-        MessageBox(NULL, L"Could not find dll", L"Error", MB_OK);
+        MessageBox(NULL, L"Could not find internal parsecd module. Make sure you're injecting with administrator privileges.", L"Error", MB_OK);
         return;
     }
 
     std::wcout << std::hex << "Module Base: " << (uintptr_t)parsecdll.lpBaseOfDll << '\n';
+
+    // UI Update E8 ? ? ? ? 0F B6 4F 2C
+    // Settings Menu Update 40 55 53 56 57 41 55
 
     uintptr_t ui_update_ptr_call = scan_ida("E8 ? ? ? ? 0F B6 4F 2C", (uintptr_t)parsecdll.lpBaseOfDll, parsecdll.SizeOfImage);
     uintptr_t ui_update_ptr = ui_update_ptr_call + *(int32_t*)(ui_update_ptr_call + 1) + 5;
@@ -120,20 +120,21 @@ void start() {
     if (MH_Initialize() != MH_OK)
         return;
 
-
     if (MH_CreateHook((void*)ui_update_ptr, &h_ui_update, reinterpret_cast<LPVOID*>(&h_ui_update_tramp)) != MH_OK)
         return;
 
     if (MH_EnableHook((void*)ui_update_ptr) != MH_OK)
         return;
-    
 
     std::wcout << "Hooked!\n";
 }
 
 BOOL WINAPI DllMain(HINSTANCE hinstDLL, DWORD fdwReason, LPVOID lpvReserved) {
+    DisableThreadLibraryCalls(hinstDLL);
+
     if (fdwReason == DLL_PROCESS_ATTACH) {
-        start();
+        CreateThread(nullptr, NULL, (LPTHREAD_START_ROUTINE)start, nullptr, NULL, nullptr);
     }
+
     return TRUE;
 }
